@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>平假名打字遊戲</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="gameContainer">
+    <div id="menu" class="overlay">
+      <h1>日語平假名練習遊戲</h1>
+      <p>點擊下面的按鈕開始遊戲，使用鍵盤輸入羅馬字讀音來消滅落下的假名。</p>
+      <button id="startButton">開始</button>
+    </div>
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div id="ui">
+      <div>分數：<span id="score">0</span></div>
+      <div>難度：<span id="level">1</span></div>
+      <div>輸入：<span id="typed">&nbsp;</span></div>
+    </div>
+    <div id="gameOver" class="overlay" style="display:none">
+      <h1>遊戲結束</h1>
+      <p id="finalScore"></p>
+      <button id="restartButton">再玩一次</button>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
