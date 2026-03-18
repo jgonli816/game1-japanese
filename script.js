@@ -10,7 +10,6 @@ const hiraganaMap = [
   { kana: 'ら', romaji: 'ra' }, { kana: 'り', romaji: 'ri' }, { kana: 'る', romaji: 'ru' }, { kana: 'れ', romaji: 're' }, { kana: 'ろ', romaji: 'ro' },
   { kana: 'わ', romaji: 'wa' }, { kana: 'を', romaji: 'wo' }, { kana: 'ん', romaji: 'n' }
 ];
-
 const katakanaMap = [
   { kana: 'ア', romaji: 'a' }, { kana: 'イ', romaji: 'i' }, { kana: 'ウ', romaji: 'u' }, { kana: 'エ', romaji: 'e' }, { kana: 'オ', romaji: 'o' },
   { kana: 'カ', romaji: 'ka' }, { kana: 'キ', romaji: 'ki' }, { kana: 'ク', romaji: 'ku' }, { kana: 'ケ', romaji: 'ke' }, { kana: 'コ', romaji: 'ko' },
@@ -22,12 +21,6 @@ const katakanaMap = [
   { kana: 'ヤ', romaji: 'ya' }, { kana: 'ユ', romaji: 'yu' }, { kana: 'ヨ', romaji: 'yo' },
   { kana: 'ラ', romaji: 'ra' }, { kana: 'リ', romaji: 'ri' }, { kana: 'ル', romaji: 'ru' }, { kana: 'レ', romaji: 're' }, { kana: 'ロ', romaji: 'ro' },
   { kana: 'ワ', romaji: 'wa' }, { kana: 'ヲ', romaji: 'wo' }, { kana: 'ン', romaji: 'n' }
-];
-
-const keyboardLayout = [
-  ['q','w','e','r','t','y','u','i','o','p'],
-  ['a','s','d','f','g','h','j','k','l'],
-  ['z','x','c','v','b','n','m']
 ];
 
 let canvas, ctx;
@@ -44,7 +37,6 @@ let lastFailedKana = null;
 let lastFailedLevel = 1;
 let currentMode = localStorage.getItem('kanaGameMode') || 'hiragana';
 let weakMap = loadWeakMap();
-
 const defenseHeight = 40;
 
 const scoreEl = document.getElementById('score');
@@ -55,7 +47,6 @@ const modeTextEl = document.getElementById('modeText');
 const menu = document.getElementById('menu');
 const gameOverEl = document.getElementById('gameOver');
 const finalScoreEl = document.getElementById('finalScore');
-const keyboardEl = document.getElementById('keyboard');
 const startButton = document.getElementById('startButton');
 const restartButton = document.getElementById('restartButton');
 const spicyButton = document.getElementById('spicyButton');
@@ -64,12 +55,10 @@ const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
 function init() {
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
-
   startButton.addEventListener('click', () => startGame(1));
   restartButton.addEventListener('click', () => startGame(1));
   spicyButton.addEventListener('click', spicyRestart);
   document.addEventListener('keydown', handlePhysicalKey);
-
   modeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       currentMode = btn.dataset.mode;
@@ -77,7 +66,6 @@ function init() {
       updateModeUI();
     });
   });
-
   createVirtualKeyboard();
   updateModeUI();
   updateTypedDisplay();
@@ -85,82 +73,51 @@ function init() {
   preloadVoices();
   drawIdleScreen();
 }
-
 function preloadVoices() {
   window.speechSynthesis.getVoices();
   window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 }
-
 function loadWeakMap() {
   try {
     const raw = localStorage.getItem('kanaGameWeakMap');
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch (e) {
-    return {};
-  }
+  } catch (e) { return {}; }
 }
-
 function saveWeakMap() {
   localStorage.setItem('kanaGameWeakMap', JSON.stringify(weakMap));
   updateWeakCount();
 }
-
-function updateWeakCount() {
-  weakCountEl.textContent = Object.keys(weakMap).length;
-}
-
+function updateWeakCount() { weakCountEl.textContent = Object.keys(weakMap).length; }
 function updateModeUI() {
   const modeText = currentMode === 'hiragana' ? '平假名' : currentMode === 'katakana' ? '片假名' : '混合模式';
   modeTextEl.textContent = modeText;
   modeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === currentMode));
 }
-
 function getKanaMap() {
   if (currentMode === 'katakana') return katakanaMap;
   if (currentMode === 'mixed') return [...hiraganaMap, ...katakanaMap];
   return hiraganaMap;
 }
-
-function createVirtualKeyboard() {
-  keyboardEl.innerHTML = '';
-  keyboardLayout.forEach((row, index) => {
-    const rowEl = document.createElement('div');
-    rowEl.className = `keyboard-row row-${row.length}`;
-    row.forEach(key => rowEl.appendChild(makeKeyButton(key, key)));
-    if (index === keyboardLayout.length - 1) {
-      const backspaceBtn = makeKeyButton('⌫', 'backspace', true);
-      backspaceBtn.classList.add('keyboard-wide');
-      rowEl.appendChild(backspaceBtn);
-    }
-    keyboardEl.appendChild(rowEl);
-  });
-
-  const controlRow = document.createElement('div');
-  controlRow.className = 'keyboard-row row-8';
-  const clearBtn = makeKeyButton('清除', 'clear', true);
-  clearBtn.classList.add('keyboard-wide');
-  const restartBtn = makeKeyButton('重開', 'restart', true);
-  restartBtn.classList.add('keyboard-wide');
-  const menuBtn = makeKeyButton('選模式', 'menu', true);
-  menuBtn.classList.add('keyboard-wide');
-  controlRow.appendChild(clearBtn);
-  controlRow.appendChild(restartBtn);
-  controlRow.appendChild(menuBtn);
-  keyboardEl.appendChild(controlRow);
-}
-
-function makeKeyButton(label, value, isSpecial = false) {
+function appendKey(parentId, label, value, className = '') {
+  const parent = document.getElementById(parentId);
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'keyboard-key';
-  if (isSpecial) btn.classList.add('special');
+  btn.className = `keyboard-key ${className}`.trim();
   btn.textContent = label;
   btn.addEventListener('click', () => handleVirtualInput(value));
-  return btn;
+  parent.appendChild(btn);
 }
-
+function createVirtualKeyboard() {
+  ['q','w','e','r','t','y','u','i','o','p'].forEach(k => appendKey('row1', k, k));
+  ['a','s','d','f','g','h','j','k','l'].forEach(k => appendKey('row2', k, k));
+  appendKey('row3', '⌫', 'backspace', 'special wide-15');
+  ['z','x','c','v','b','n','m'].forEach(k => appendKey('row3', k, k));
+  appendKey('row3', '清除', 'clear', 'special wide-15');
+  appendKey('row4', '重開', 'restart', 'special');
+  appendKey('row4', '選模式', 'menu', 'special');
+}
 function handleVirtualInput(value) {
   if (value === 'restart') { startGame(1); return; }
   if (value === 'menu') {
@@ -170,42 +127,18 @@ function handleVirtualInput(value) {
     drawIdleScreen();
     return;
   }
-  if (value === 'clear') {
-    typedBuffer = '';
-    updateTypedDisplay();
-    return;
-  }
+  if (value === 'clear') { typedBuffer = ''; updateTypedDisplay(); return; }
   if (!running) return;
-  if (value === 'backspace') {
-    typedBuffer = typedBuffer.slice(0, -1);
-    updateTypedDisplay();
-    return;
-  }
-  if (/^[a-z]$/.test(value)) {
-    typedBuffer += value;
-    updateTypedDisplay();
-    checkTypedBuffer();
-  }
+  if (value === 'backspace') { typedBuffer = typedBuffer.slice(0, -1); updateTypedDisplay(); return; }
+  if (/^[a-z]$/.test(value)) { typedBuffer += value; updateTypedDisplay(); checkTypedBuffer(); }
 }
-
 function handlePhysicalKey(e) {
   const key = e.key.toLowerCase();
-  if (key === 'backspace') {
-    e.preventDefault();
-    handleVirtualInput('backspace');
-    return;
-  }
+  if (key === 'backspace') { e.preventDefault(); handleVirtualInput('backspace'); return; }
   if (/^[a-z]$/.test(key)) handleVirtualInput(key);
 }
-
-function levelToSpawnInterval(targetLevel) {
-  return Math.max(650, 1800 - (targetLevel - 1) * 140);
-}
-
-function levelToSpeedMultiplier(targetLevel) {
-  return 1 + (targetLevel - 1) * 0.12;
-}
-
+function levelToSpawnInterval(targetLevel) { return Math.max(650, 1800 - (targetLevel - 1) * 140); }
+function levelToSpeedMultiplier(targetLevel) { return 1 + (targetLevel - 1) * 0.12; }
 function startGame(startLevel = 1) {
   falling = [];
   score = 0;
@@ -217,21 +150,15 @@ function startGame(startLevel = 1) {
   lastTime = 0;
   lastFailedKana = null;
   running = true;
-
   scoreEl.textContent = score;
   levelEl.textContent = level;
   updateModeUI();
   updateTypedDisplay();
   menu.style.display = 'none';
   gameOverEl.style.display = 'none';
-
   requestAnimationFrame(gameLoop);
 }
-
-function spicyRestart() {
-  startGame(Math.max(1, lastFailedLevel - 1));
-}
-
+function spicyRestart() { startGame(Math.max(1, lastFailedLevel - 1)); }
 function getWeightedKana(map) {
   const pool = [];
   for (const item of map) {
@@ -242,7 +169,6 @@ function getWeightedKana(map) {
   }
   return pool[Math.floor(Math.random() * pool.length)];
 }
-
 function spawnKana() {
   const item = getWeightedKana(getKanaMap());
   const initialSize = 36;
@@ -251,54 +177,34 @@ function spawnKana() {
   const margin = 16;
   const minX = margin;
   const maxX = Math.max(minX, canvas.width - textWidth - margin);
-
-  falling.push({
-    kana: item.kana,
-    romaji: item.romaji,
-    x: randomBetween(minX, maxX),
-    y: -initialSize,
-    speed: randomBetween(28, 44),
-    size: initialSize
-  });
+  falling.push({ kana: item.kana, romaji: item.romaji, x: randomBetween(minX, maxX), y: -initialSize, speed: randomBetween(28, 44), size: initialSize });
 }
-
-function randomBetween(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
+function randomBetween(min, max) { return Math.random() * (max - min) + min; }
 function gameLoop(timestamp) {
   if (!running) return;
   if (!lastTime) lastTime = timestamp;
   const delta = timestamp - lastTime;
   lastTime = timestamp;
-
   if (timestamp - lastSpawn > spawnInterval) {
     spawnKana();
     lastSpawn = timestamp;
     if (spawnInterval > 650) spawnInterval *= 0.985;
   }
-
   updateObjects(delta);
   draw();
   if (running) requestAnimationFrame(gameLoop);
 }
-
 function updateObjects(delta) {
   const dyFactor = (delta / 1000) * speedMultiplier;
   for (let i = 0; i < falling.length; i++) {
     const obj = falling[i];
     obj.y += obj.speed * dyFactor;
     obj.size = Math.min(obj.size + 0.015 * delta, 86);
-
     ctx.font = `${obj.size}px sans-serif`;
     const textWidth = ctx.measureText(obj.kana).width;
     const margin = 10;
-
     if (obj.x < margin) obj.x = margin;
-    if (obj.x + textWidth > canvas.width - margin) {
-      obj.x = Math.max(margin, canvas.width - textWidth - margin);
-    }
-
+    if (obj.x + textWidth > canvas.width - margin) obj.x = Math.max(margin, canvas.width - textWidth - margin);
     if (obj.y > canvas.height - defenseHeight - 4) {
       lastFailedKana = obj;
       lastFailedLevel = level;
@@ -310,14 +216,12 @@ function updateObjects(delta) {
     }
   }
 }
-
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#ffe7e7';
   ctx.fillRect(0, canvas.height - defenseHeight, canvas.width, defenseHeight);
   ctx.fillStyle = '#ff3434';
   ctx.fillRect(0, canvas.height - defenseHeight, canvas.width, 2);
-
   for (const obj of falling) {
     ctx.font = `${obj.size}px sans-serif`;
     ctx.textBaseline = 'top';
@@ -325,7 +229,6 @@ function draw() {
     ctx.fillText(obj.kana, obj.x, obj.y);
   }
 }
-
 function drawIdleScreen() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#fafcff';
@@ -334,7 +237,6 @@ function drawIdleScreen() {
   ctx.fillRect(0, canvas.height - defenseHeight, canvas.width, defenseHeight);
   ctx.fillStyle = '#ff3434';
   ctx.fillRect(0, canvas.height - defenseHeight, canvas.width, 2);
-
   ctx.fillStyle = '#758292';
   ctx.font = '24px sans-serif';
   ctx.textAlign = 'center';
@@ -345,21 +247,15 @@ function drawIdleScreen() {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 }
-
 function checkTypedBuffer() {
   let foundExact = null;
   let foundPrefix = false;
-
   for (const obj of falling) {
     if (obj.romaji.startsWith(typedBuffer)) {
       foundPrefix = true;
-      if (obj.romaji === typedBuffer) {
-        foundExact = obj;
-        break;
-      }
+      if (obj.romaji === typedBuffer) { foundExact = obj; break; }
     }
   }
-
   if (foundExact) {
     const index = falling.indexOf(foundExact);
     if (index !== -1) {
@@ -367,7 +263,6 @@ function checkTypedBuffer() {
       falling.splice(index, 1);
       score += 1;
       scoreEl.textContent = score;
-
       if (score % 10 === 0) {
         level += 1;
         levelEl.textContent = level;
@@ -382,47 +277,31 @@ function checkTypedBuffer() {
     updateTypedDisplay();
   }
 }
-
-function updateTypedDisplay() {
-  typedEl.textContent = typedBuffer || '\u00a0';
-}
-
+function updateTypedDisplay() { typedEl.textContent = typedBuffer || '\u00a0'; }
 function showGameOver() {
   if (lastFailedKana) {
-    finalScoreEl.innerHTML = `
-      您的分數：${score}<br>
-      死亡難度：${lastFailedLevel}<br><br>
-      ❌ 擊中你的假名是：<br>
-      <span class="bigKana">${lastFailedKana.kana}</span><br>
-      羅馬字拼音：<b>${lastFailedKana.romaji}</b><br>
-      已記錄為弱點字，之後會較常出現。
-    `;
+    finalScoreEl.innerHTML = `您的分數：${score}<br>死亡難度：${lastFailedLevel}<br><br>❌ 擊中你的假名是：<br><span class="bigKana">${lastFailedKana.kana}</span><br>羅馬字拼音：<b>${lastFailedKana.romaji}</b><br>已記錄為弱點字，之後會較常出現。`;
     speakKana(lastFailedKana.kana);
   } else {
     finalScoreEl.textContent = `您的分數：${score}`;
   }
   gameOverEl.style.display = 'flex';
 }
-
 function speakKana(kana) {
   try {
     if (!('speechSynthesis' in window)) return;
     const synth = window.speechSynthesis;
     synth.cancel();
-
     const utter = new SpeechSynthesisUtterance(kana);
     utter.lang = 'ja-JP';
     utter.rate = 0.95;
     utter.pitch = 1.0;
-
     const voices = synth.getVoices();
     const jaVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja'));
     if (jaVoice) utter.voice = jaVoice;
-
     synth.speak(utter);
   } catch (e) {
     console.log('speech error', e);
   }
 }
-
 window.addEventListener('load', init);
