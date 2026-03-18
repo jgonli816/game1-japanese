@@ -1,61 +1,25 @@
-// Hiragana falling game for Japanese learning.
-// Inspired by the user's description: characters fall from the top of the screen and
-// players type the romaji (latin reading) to destroy them before they reach the bottom.
-
-// Mapping of hiragana to romaji. Only basic gojūon (five rows) included. Feel free to extend.
 const kanaMap = [
-  { kana: 'あ', romaji: 'a' },
-  { kana: 'い', romaji: 'i' },
-  { kana: 'う', romaji: 'u' },
-  { kana: 'え', romaji: 'e' },
-  { kana: 'お', romaji: 'o' },
-  { kana: 'か', romaji: 'ka' },
-  { kana: 'き', romaji: 'ki' },
-  { kana: 'く', romaji: 'ku' },
-  { kana: 'け', romaji: 'ke' },
-  { kana: 'こ', romaji: 'ko' },
-  { kana: 'さ', romaji: 'sa' },
-  { kana: 'し', romaji: 'shi' },
-  { kana: 'す', romaji: 'su' },
-  { kana: 'せ', romaji: 'se' },
-  { kana: 'そ', romaji: 'so' },
-  { kana: 'た', romaji: 'ta' },
-  { kana: 'ち', romaji: 'chi' },
-  { kana: 'つ', romaji: 'tsu' },
-  { kana: 'て', romaji: 'te' },
-  { kana: 'と', romaji: 'to' },
-  { kana: 'な', romaji: 'na' },
-  { kana: 'に', romaji: 'ni' },
-  { kana: 'ぬ', romaji: 'nu' },
-  { kana: 'ね', romaji: 'ne' },
-  { kana: 'の', romaji: 'no' },
-  { kana: 'は', romaji: 'ha' },
-  { kana: 'ひ', romaji: 'hi' },
-  { kana: 'ふ', romaji: 'fu' },
-  { kana: 'へ', romaji: 'he' },
-  { kana: 'ほ', romaji: 'ho' },
-  { kana: 'ま', romaji: 'ma' },
-  { kana: 'み', romaji: 'mi' },
-  { kana: 'む', romaji: 'mu' },
-  { kana: 'め', romaji: 'me' },
-  { kana: 'も', romaji: 'mo' },
-  { kana: 'や', romaji: 'ya' },
-  { kana: 'ゆ', romaji: 'yu' },
-  { kana: 'よ', romaji: 'yo' },
-  { kana: 'ら', romaji: 'ra' },
-  { kana: 'り', romaji: 'ri' },
-  { kana: 'る', romaji: 'ru' },
-  { kana: 'れ', romaji: 're' },
-  { kana: 'ろ', romaji: 'ro' },
-  { kana: 'わ', romaji: 'wa' },
-  { kana: 'を', romaji: 'wo' },
-  { kana: 'ん', romaji: 'n' }
+  { kana: 'あ', romaji: 'a' }, { kana: 'い', romaji: 'i' }, { kana: 'う', romaji: 'u' }, { kana: 'え', romaji: 'e' }, { kana: 'お', romaji: 'o' },
+  { kana: 'か', romaji: 'ka' }, { kana: 'き', romaji: 'ki' }, { kana: 'く', romaji: 'ku' }, { kana: 'け', romaji: 'ke' }, { kana: 'こ', romaji: 'ko' },
+  { kana: 'さ', romaji: 'sa' }, { kana: 'し', romaji: 'shi' }, { kana: 'す', romaji: 'su' }, { kana: 'せ', romaji: 'se' }, { kana: 'そ', romaji: 'so' },
+  { kana: 'た', romaji: 'ta' }, { kana: 'ち', romaji: 'chi' }, { kana: 'つ', romaji: 'tsu' }, { kana: 'て', romaji: 'te' }, { kana: 'と', romaji: 'to' },
+  { kana: 'な', romaji: 'na' }, { kana: 'に', romaji: 'ni' }, { kana: 'ぬ', romaji: 'nu' }, { kana: 'ね', romaji: 'ne' }, { kana: 'の', romaji: 'no' },
+  { kana: 'は', romaji: 'ha' }, { kana: 'ひ', romaji: 'hi' }, { kana: 'ふ', romaji: 'fu' }, { kana: 'へ', romaji: 'he' }, { kana: 'ほ', romaji: 'ho' },
+  { kana: 'ま', romaji: 'ma' }, { kana: 'み', romaji: 'mi' }, { kana: 'む', romaji: 'mu' }, { kana: 'め', romaji: 'me' }, { kana: 'も', romaji: 'mo' },
+  { kana: 'や', romaji: 'ya' }, { kana: 'ゆ', romaji: 'yu' }, { kana: 'よ', romaji: 'yo' },
+  { kana: 'ら', romaji: 'ra' }, { kana: 'り', romaji: 'ri' }, { kana: 'る', romaji: 'ru' }, { kana: 'れ', romaji: 're' }, { kana: 'ろ', romaji: 'ro' },
+  { kana: 'わ', romaji: 'wa' }, { kana: 'を', romaji: 'wo' }, { kana: 'ん', romaji: 'n' }
 ];
 
-// Game state variables
+const keyboardLayout = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l'],
+  ['z','x','c','v','b','n','m']
+];
+
 let canvas, ctx;
 let falling = [];
-let spawnInterval = 2000; // time between spawns (ms)
+let spawnInterval = 1800;
 let lastSpawn = 0;
 let lastTime = 0;
 let score = 0;
@@ -63,137 +27,235 @@ let level = 1;
 let speedMultiplier = 1;
 let typedBuffer = '';
 let running = false;
+const defenseHeight = 40;
 
-// UI Elements
 const scoreEl = document.getElementById('score');
 const levelEl = document.getElementById('level');
 const typedEl = document.getElementById('typed');
 const menu = document.getElementById('menu');
 const gameOverEl = document.getElementById('gameOver');
 const finalScoreEl = document.getElementById('finalScore');
+const keyboardEl = document.getElementById('keyboard');
 
 function init() {
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
+
   document.getElementById('startButton').addEventListener('click', startGame);
   document.getElementById('restartButton').addEventListener('click', startGame);
-  // Listen to keyboard events at document level
-  document.addEventListener('keydown', handleKey);
+  document.addEventListener('keydown', handlePhysicalKey);
+  createVirtualKeyboard();
+  drawIdleScreen();
 }
 
-// Function to start or restart the game
+function createVirtualKeyboard() {
+  keyboardEl.innerHTML = '';
+
+  keyboardLayout.forEach((row) => {
+    const rowEl = document.createElement('div');
+    rowEl.className = `keyboard-row row-${row.length}`;
+
+    row.forEach((key) => {
+      rowEl.appendChild(makeKeyButton(key, key));
+    });
+
+    if (row.length === 7) {
+      rowEl.appendChild(makeKeyButton('⌫', 'backspace', true));
+    }
+
+    keyboardEl.appendChild(rowEl);
+  });
+
+  const controlRow = document.createElement('div');
+  controlRow.className = 'keyboard-row row-9';
+  const clearBtn = makeKeyButton('清除', 'clear', true);
+  clearBtn.classList.add('keyboard-wide');
+  const restartBtn = makeKeyButton('重開', 'restart', true);
+  restartBtn.classList.add('keyboard-wide');
+
+  controlRow.appendChild(clearBtn);
+  controlRow.appendChild(restartBtn);
+  keyboardEl.appendChild(controlRow);
+}
+
+function makeKeyButton(label, value, isSpecial = false) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'keyboard-key';
+  if (isSpecial) btn.classList.add('keyboard-wide');
+  btn.textContent = label;
+  btn.addEventListener('click', () => handleVirtualInput(value));
+  return btn;
+}
+
+function handleVirtualInput(value) {
+  if (value === 'restart') {
+    startGame();
+    return;
+  }
+  if (value === 'clear') {
+    typedBuffer = '';
+    updateTypedDisplay();
+    return;
+  }
+  if (!running) return;
+
+  if (value === 'backspace') {
+    typedBuffer = typedBuffer.slice(0, -1);
+    updateTypedDisplay();
+    return;
+  }
+
+  if (/^[a-z]$/.test(value)) {
+    typedBuffer += value;
+    updateTypedDisplay();
+    checkTypedBuffer();
+  }
+}
+
+function handlePhysicalKey(e) {
+  const key = e.key.toLowerCase();
+
+  if (key === 'backspace') {
+    e.preventDefault();
+    handleVirtualInput('backspace');
+    return;
+  }
+
+  if (/^[a-z]$/.test(key)) {
+    handleVirtualInput(key);
+  }
+}
+
 function startGame() {
-  // Reset state
   falling = [];
   score = 0;
   level = 1;
-  spawnInterval = 2000;
+  spawnInterval = 1800;
   speedMultiplier = 1;
   typedBuffer = '';
   lastSpawn = 0;
   lastTime = 0;
   running = true;
+
   scoreEl.textContent = score;
   levelEl.textContent = level;
-  typedEl.textContent = '\u00a0';
+  updateTypedDisplay();
   menu.style.display = 'none';
   gameOverEl.style.display = 'none';
-  // Start loop
+
   requestAnimationFrame(gameLoop);
 }
 
-// Spawns a new kana object at random x position
 function spawnKana() {
   const item = kanaMap[Math.floor(Math.random() * kanaMap.length)];
-  const x = Math.random() * (canvas.width - 50) + 10;
-  const obj = {
+  const initialSize = 36;
+  ctx.font = `${initialSize}px sans-serif`;
+  const textWidth = ctx.measureText(item.kana).width;
+
+  const margin = 16;
+  const minX = margin;
+  const maxX = Math.max(minX, canvas.width - textWidth - margin);
+
+  falling.push({
     kana: item.kana,
     romaji: item.romaji,
-    x: x,
-    y: -30,
-    speed: 30 + Math.random() * 20, // base speed (will be scaled)
-    size: 32
-  };
-  falling.push(obj);
+    x: randomBetween(minX, maxX),
+    y: -initialSize,
+    speed: randomBetween(28, 44),
+    size: initialSize
+  });
 }
 
-// Game loop executed with requestAnimationFrame for efficiency
+function randomBetween(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
 function gameLoop(timestamp) {
   if (!running) return;
   if (!lastTime) lastTime = timestamp;
   const delta = timestamp - lastTime;
   lastTime = timestamp;
 
-  // Update spawn based on interval
   if (timestamp - lastSpawn > spawnInterval) {
     spawnKana();
     lastSpawn = timestamp;
-    // Increase difficulty gradually by reducing spawn interval
-    if (spawnInterval > 500) {
-      spawnInterval *= 0.99; // 1% faster each spawn
-    }
+    if (spawnInterval > 650) spawnInterval *= 0.985;
   }
 
   updateObjects(delta);
   draw();
-  requestAnimationFrame(gameLoop);
+  if (running) requestAnimationFrame(gameLoop);
 }
 
-// Update positions and sizes
 function updateObjects(delta) {
   const dyFactor = (delta / 1000) * speedMultiplier;
+
   for (let i = 0; i < falling.length; i++) {
     const obj = falling[i];
     obj.y += obj.speed * dyFactor;
-    obj.size += 0.02 * delta; // slowly increase font size
-    // Check if object reached bottom (defense line is canvas.height)
-    if (obj.y > canvas.height - 40) {
-      // Game over
+    obj.size = Math.min(obj.size + 0.015 * delta, 86);
+
+    ctx.font = `${obj.size}px sans-serif`;
+    const textWidth = ctx.measureText(obj.kana).width;
+
+    const margin = 10;
+    if (obj.x < margin) obj.x = margin;
+    if (obj.x + textWidth > canvas.width - margin) {
+      obj.x = Math.max(margin, canvas.width - textWidth - margin);
+    }
+
+    if (obj.y > canvas.height - defenseHeight - 4) {
       running = false;
       showGameOver();
       return;
     }
   }
-  // Remove objects that were marked for deletion (if any)
 }
 
-// Render game objects
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // Draw defense line
-  ctx.fillStyle = '#ffe5e5';
-  ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
-  ctx.fillStyle = '#ff0000';
-  ctx.fillRect(0, canvas.height - 40, canvas.width, 2);
 
-  // Draw falling kana
+  ctx.fillStyle = '#ffe5e5';
+  ctx.fillRect(0, canvas.height - defenseHeight, canvas.width, defenseHeight);
+
+  ctx.fillStyle = '#ff2e2e';
+  ctx.fillRect(0, canvas.height - defenseHeight, canvas.width, 2);
+
   for (const obj of falling) {
     ctx.font = `${obj.size}px sans-serif`;
-    ctx.fillStyle = '#333';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#2d3136';
     ctx.fillText(obj.kana, obj.x, obj.y);
   }
 }
 
-// Handle keyboard input
-function handleKey(e) {
-  if (!running) return;
-  const key = e.key.toLowerCase();
-  // Append to typed buffer if letter
-  if (/^[a-z]$/.test(key)) {
-    typedBuffer += key;
-    typedEl.textContent = typedBuffer;
-    checkTypedBuffer();
-  } else if (key === 'backspace') {
-    typedBuffer = typedBuffer.slice(0, -1);
-    typedEl.textContent = typedBuffer || '\u00a0';
-  }
+function drawIdleScreen() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#fafafa';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = '#ffe5e5';
+  ctx.fillRect(0, canvas.height - defenseHeight, canvas.width, defenseHeight);
+  ctx.fillStyle = '#ff2e2e';
+  ctx.fillRect(0, canvas.height - defenseHeight, canvas.width, 2);
+
+  ctx.fillStyle = '#7a8694';
+  ctx.font = '24px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('按「開始」後開始遊戲', canvas.width / 2, canvas.height / 2 - 18);
+  ctx.font = '18px sans-serif';
+  ctx.fillText('可用實體鍵盤或下方虛擬鍵盤輸入', canvas.width / 2, canvas.height / 2 + 20);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
 }
 
-// Check typed buffer against falling objects
 function checkTypedBuffer() {
-  // Find candidate objects whose romaji starts with typedBuffer
   let foundExact = null;
   let foundPrefix = false;
+
   for (const obj of falling) {
     if (obj.romaji.startsWith(typedBuffer)) {
       foundPrefix = true;
@@ -203,28 +265,30 @@ function checkTypedBuffer() {
       }
     }
   }
+
   if (foundExact) {
-    // Remove object and update score
     const index = falling.indexOf(foundExact);
     if (index !== -1) {
       falling.splice(index, 1);
       score += 1;
       scoreEl.textContent = score;
-      // Increase speed and level every few points
+
       if (score % 10 === 0) {
         level += 1;
         levelEl.textContent = level;
-        speedMultiplier *= 1.1;
+        speedMultiplier *= 1.12;
       }
     }
-    // Reset typed buffer
     typedBuffer = '';
-    typedEl.textContent = '\u00a0';
+    updateTypedDisplay();
   } else if (!foundPrefix) {
-    // Reset if typed string doesn't match any prefix
     typedBuffer = '';
-    typedEl.textContent = '\u00a0';
+    updateTypedDisplay();
   }
+}
+
+function updateTypedDisplay() {
+  typedEl.textContent = typedBuffer || '\u00a0';
 }
 
 function showGameOver() {
