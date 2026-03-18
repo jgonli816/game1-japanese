@@ -27,6 +27,8 @@ let level = 1;
 let speedMultiplier = 1;
 let typedBuffer = '';
 let running = false;
+let lastFailedKana = null;
+let audioUnlocked = false;
 const defenseHeight = 40;
 
 const scoreEl = document.getElementById('score');
@@ -41,11 +43,24 @@ function init() {
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
 
-  document.getElementById('startButton').addEventListener('click', startGame);
-  document.getElementById('restartButton').addEventListener('click', startGame);
-  document.addEventListener('keydown', handlePhysicalKey);
+  document.getElementById('startButton').addEventListener('click', () => {
+    unlockAudio();
+    startGame();
+  });
+  document.getElementById('restartButton').addEventListener('click', () => {
+    unlockAudio();
+    startGame();
+  });
+  document.addEventListener('keydown', (e) => {
+    unlockAudio();
+    handlePhysicalKey(e);
+  });
   createVirtualKeyboard();
   drawIdleScreen();
+}
+
+function unlockAudio() {
+  audioUnlocked = true;
 }
 
 function createVirtualKeyboard() {
@@ -84,7 +99,10 @@ function makeKeyButton(label, value, isSpecial = false) {
   btn.className = 'keyboard-key';
   if (isSpecial) btn.classList.add('keyboard-wide');
   btn.textContent = label;
-  btn.addEventListener('click', () => handleVirtualInput(value));
+  btn.addEventListener('click', () => {
+    unlockAudio();
+    handleVirtualInput(value);
+  });
   return btn;
 }
 
@@ -136,6 +154,7 @@ function startGame() {
   typedBuffer = '';
   lastSpawn = 0;
   lastTime = 0;
+  lastFailedKana = null;
   running = true;
 
   scoreEl.textContent = score;
@@ -206,6 +225,7 @@ function updateObjects(delta) {
     }
 
     if (obj.y > canvas.height - defenseHeight - 4) {
+      lastFailedKana = obj;
       running = false;
       showGameOver();
       return;
@@ -272,6 +292,7 @@ function checkTypedBuffer() {
       falling.splice(index, 1);
       score += 1;
       scoreEl.textContent = score;
+      speakKana(foundExact.kana);
 
       if (score % 10 === 0) {
         level += 1;
@@ -287,12 +308,34 @@ function checkTypedBuffer() {
   }
 }
 
+function speakKana(kana) {
+  if (!audioUnlocked || !('speechSynthesis' in window)) return;
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(kana);
+  utterance.lang = 'ja-JP';
+  utterance.rate = 0.95;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+  window.speechSynthesis.speak(utterance);
+}
+
 function updateTypedDisplay() {
   typedEl.textContent = typedBuffer || '\u00a0';
 }
 
 function showGameOver() {
-  finalScoreEl.textContent = `您的分數：${score}`;
+  if (lastFailedKana) {
+    finalScoreEl.innerHTML = `
+      您的分數：${score}<br><br>
+      ❌ 你被擊中！<br>
+      平假名：<span class="failed-kana">${lastFailedKana.kana}</span><br>
+      讀音：<span class="failed-romaji">${lastFailedKana.romaji}</span>
+    `;
+  } else {
+    finalScoreEl.textContent = `您的分數：${score}`;
+  }
+
   gameOverEl.style.display = 'flex';
 }
 

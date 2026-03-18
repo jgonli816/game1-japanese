@@ -130,6 +130,21 @@ button:hover {
   grid-column: span 2;
 }
 
+#finalScore {
+  line-height: 1.8;
+}
+
+.failed-kana {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.failed-romaji {
+  font-size: 24px;
+  font-weight: 700;
+  color: #005da0;
+}
+
 @media (max-width: 900px) {
   .overlay {
     min-height: 0;
