@@ -1,173 +1,69 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: Arial, "Noto Sans", sans-serif;
-  background: #f4f6f8;
+  font-family: Arial, "Noto Sans", "Noto Sans JP", sans-serif;
+  background: linear-gradient(180deg, #f3f7fb 0%, #edf2f7 100%);
   min-height: 100%;
-  color: #222;
+  color: #1e2936;
 }
-
-body {
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-#gameContainer {
-  position: relative;
-  width: min(100%, 920px);
-  margin: 0 auto;
-  text-align: center;
-}
-
+body { padding: 16px; box-sizing: border-box; }
+#gameContainer { position: relative; width: min(100%, 940px); margin: 0 auto; text-align: center; }
 canvas {
-  border: 1px solid #cfd6dd;
-  background: #fafafa;
-  display: block;
-  margin: 0 auto;
-  width: 100%;
-  height: auto;
-  box-sizing: border-box;
+  border: 1px solid #ced8e3; background: #fafcff; display: block; margin: 0 auto;
+  width: 100%; height: auto; box-sizing: border-box; border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(28, 41, 56, 0.08);
 }
-
 #ui {
-  display: flex;
-  justify-content: space-around;
-  gap: 12px;
-  padding: 10px 4px 14px;
-  font-size: 18px;
-  color: #333;
-  flex-wrap: wrap;
+  display: flex; justify-content: space-around; gap: 12px; padding: 12px 4px 14px;
+  font-size: 17px; color: #324254; flex-wrap: wrap;
 }
-
 .overlay {
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: 100%;
-  min-height: 500px;
-  background: rgba(255, 255, 255, 0.92);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  box-sizing: border-box;
-  padding: 20px;
+  position: absolute; inset: 0 auto auto 0; width: 100%; min-height: 500px;
+  background: rgba(244, 248, 252, 0.9); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 10; box-sizing: border-box;
+  padding: 20px; border-radius: 14px;
 }
-
+.panel {
+  width: min(100%, 660px); background: rgba(255,255,255,0.95); border: 1px solid #d9e2eb;
+  border-radius: 18px; padding: 22px 20px; box-shadow: 0 10px 24px rgba(18, 31, 45, 0.08);
+}
+h1 { margin: 0 0 12px; }
+.subtitle { margin: 0 0 18px; line-height: 1.55; color: #58687a; }
+.modeLabel { text-align: left; font-weight: 700; margin-bottom: 10px; color: #314255; }
+.modeButtons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 button {
-  padding: 10px 20px;
-  font-size: 18px;
-  border: none;
-  background: #007acc;
-  color: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-top: 10px;
+  padding: 11px 18px; font-size: 17px; border: none; background: #0a7be0; color: #fff;
+  border-radius: 10px; cursor: pointer; margin-top: 10px; transition: transform .08s ease, background .15s ease;
 }
-
-button:hover {
-  background: #005da0;
-}
-
+button:hover { background: #0868bc; }
+button:active { transform: translateY(1px); }
+.mode-btn { background: #eef5fb; color: #23405a; border: 1px solid #cbd8e6; margin-top: 0; }
+.mode-btn.active { background: #d8ecff; border-color: #83bfff; color: #0c4f9a; font-weight: 700; }
+.menuActions { margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.finalScore { font-size: 19px; line-height: 1.8; }
+.finalScore .bigKana { font-size: 38px; font-weight: 700; color: #0d5db2; }
 #keyboardWrap {
-  background: #ffffff;
-  border: 1px solid #d9e0e6;
-  border-radius: 12px;
-  padding: 12px;
-  box-sizing: border-box;
-  margin-top: 4px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  background: rgba(255,255,255,0.95); border: 1px solid #d9e0e6; border-radius: 14px;
+  padding: 12px; box-sizing: border-box; margin-top: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.04);
 }
-
-#keyboardTitle {
-  font-size: 14px;
-  color: #55606d;
-  margin-bottom: 10px;
-  text-align: left;
-}
-
-#keyboard {
-  display: grid;
-  gap: 8px;
-}
-
-.keyboard-row {
-  display: grid;
-  gap: 8px;
-}
-
-.row-10 {
-  grid-template-columns: repeat(10, minmax(0, 1fr));
-}
-
-.row-9 {
-  grid-template-columns: repeat(9, minmax(0, 1fr));
-}
-
-.row-7 {
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-}
-
+#keyboardTitle { font-size: 14px; color: #55606d; margin-bottom: 10px; text-align: left; }
+#keyboard { display: grid; gap: 8px; }
+.keyboard-row { display: grid; gap: 8px; }
+.row-10 { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+.row-9 { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+.row-8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 .keyboard-key {
-  min-height: 44px;
-  border: 1px solid #cad3dc;
-  background: #f8fbfd;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #23313f;
-  cursor: pointer;
-  user-select: none;
-  touch-action: manipulation;
-  margin: 0;
+  min-height: 44px; border: 1px solid #cad3dc; background: #f8fbfd; border-radius: 10px;
+  font-size: 16px; font-weight: 700; color: #23313f; cursor: pointer; user-select: none;
+  touch-action: manipulation; margin: 0;
 }
-
-.keyboard-key:active {
-  transform: translateY(1px);
-}
-
-.keyboard-wide {
-  grid-column: span 2;
-}
-
-#finalScore {
-  line-height: 1.8;
-}
-
-.failed-kana {
-  font-size: 32px;
-  font-weight: 700;
-}
-
-.failed-romaji {
-  font-size: 24px;
-  font-weight: 700;
-  color: #005da0;
-}
-
-@media (max-width: 900px) {
-  .overlay {
-    min-height: 0;
-    height: 500px;
-  }
-}
-
-@media (max-width: 640px) {
-  body {
-    padding: 10px;
-  }
-
-  #ui {
-    font-size: 16px;
-  }
-
-  .keyboard-key {
-    min-height: 42px;
-    font-size: 14px;
-    padding: 0;
-  }
-
-  #keyboardWrap {
-    padding: 10px;
-  }
+.keyboard-key.special { background: #edf4fa; }
+.keyboard-wide { grid-column: span 2; }
+@media (max-width: 900px) { .overlay { min-height: 0; height: 500px; } }
+@media (max-width: 700px) {
+  body { padding: 10px; }
+  .modeButtons { grid-template-columns: 1fr; }
+  #ui { font-size: 15px; }
+  .keyboard-key { min-height: 42px; font-size: 14px; padding: 0; }
+  .panel { padding: 18px 14px; }
 }

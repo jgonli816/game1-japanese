@@ -3,23 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>平假名打字遊戲</title>
+  <title>日語假名打字遊戲 v2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="gameContainer">
     <div id="menu" class="overlay">
-      <h1>日語平假名練習遊戲</h1>
-      <p>輸入羅馬字讀音，消滅落下的平假名。手機和平板也可用下方虛擬鍵盤遊玩。</p>
-      <button id="startButton">開始</button>
+      <div class="panel">
+        <h1>日語假名打字遊戲 v2</h1>
+        <p class="subtitle">輸入羅馬字讀音，消滅落下的假名。支援平假名、片假名、混合模式，以及手機 / 平板虛擬鍵盤。</p>
+        <div class="modeLabel">選擇模式</div>
+        <div class="modeButtons">
+          <button class="mode-btn" data-mode="hiragana">平假名</button>
+          <button class="mode-btn" data-mode="katakana">片假名</button>
+          <button class="mode-btn" data-mode="mixed">混合模式</button>
+        </div>
+        <div class="menuActions">
+          <button id="startButton">開始遊戲</button>
+        </div>
+      </div>
     </div>
 
     <canvas id="gameCanvas" width="800" height="500"></canvas>
 
     <div id="ui">
+      <div>模式：<span id="modeText">平假名</span></div>
       <div>分數：<span id="score">0</span></div>
       <div>難度：<span id="level">1</span></div>
       <div>輸入：<span id="typed">&nbsp;</span></div>
+      <div>弱點字：<span id="weakCount">0</span></div>
     </div>
 
     <div id="keyboardWrap">
@@ -28,12 +40,16 @@
     </div>
 
     <div id="gameOver" class="overlay" style="display:none">
-      <h1>遊戲結束</h1>
-      <p id="finalScore"></p>
-      <button id="restartButton">再玩一次</button>
+      <div class="panel">
+        <h1>遊戲結束</h1>
+        <div id="finalScore" class="finalScore"></div>
+        <div class="menuActions">
+          <button id="restartButton">重新開始</button>
+          <button id="spicyButton">加辣🔥</button>
+        </div>
+      </div>
     </div>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
