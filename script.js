@@ -1,4 +1,4 @@
-const API_BASE = "https://kana-game-api.jgon-li-816.workers.dev";
+const API_BASE = "https://api.tj220728.icu";
 
 const hiraganaMap = [
   { kana: 'あ', romaji: 'a' }, { kana: 'い', romaji: 'i' }, { kana: 'う', romaji: 'u' }, { kana: 'え', romaji: 'e' }, { kana: 'お', romaji: 'o' },
