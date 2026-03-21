@@ -116,7 +116,7 @@ function updateModeUI() {
   modeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === currentMode));
 }
 function updateInputTypeUI() {
-  inputTypeTextEl.textContent = inputType === 'unknown' ? '未判定' : inputType;
+  inputTypeTextEl.textContent = inputTypeLabel(inputType);
 }
 function getKanaMap() {
   if (currentMode === 'katakana') return katakanaMap;
@@ -247,7 +247,7 @@ async function loadLeaderboard(mode = leaderboardModeEl.value, inputType = leade
         <td>${escapeHtml(row.name || "-")}</td>
         <td>${row.score ?? "-"}</td>
         <td>${row.level ?? "-"}</td>
-        <td>${escapeHtml(row.input_type || "-")}</td>
+        <td>${escapeHtml(inputTypeLabel(row.input_type))}</td>
         <td>${formatTime(row.created_at)}</td>
       </tr>
     `).join("");
@@ -419,5 +419,10 @@ function formatTime(ts) {
   if (!ts) return "-";
   const d = new Date(ts);
   return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function inputTypeLabel(type) {
+  if (type === "virtual") return "虛擬鍵盤";
+  if (type === "physical") return "實體鍵盤";
+  return "未判定";
 }
 window.addEventListener('load', init);
