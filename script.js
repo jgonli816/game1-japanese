@@ -237,7 +237,7 @@ async function loadLeaderboard(mode = leaderboardModeEl.value, inputType = leade
 
     if (data.length === 0) {
       leaderboardBodyEl.innerHTML = `<tr><td colspan="6">暫無資料</td></tr>`;
-      leaderboardStatusEl.textContent = `排行榜已載入：${mode} / ${inputType}（暫無資料）`;
+      leaderboardStatusEl.textContent = `排行榜已載入：${mode} / ${inputTypeLabel(inputType)}（暫無資料）`;
       return;
     }
 
@@ -252,7 +252,7 @@ async function loadLeaderboard(mode = leaderboardModeEl.value, inputType = leade
       </tr>
     `).join("");
 
-    leaderboardStatusEl.textContent = `排行榜已載入：${mode} / ${inputType}`;
+    leaderboardStatusEl.textContent = `排行榜已載入：${mode} / ${inputTypeLabel(inputType)}`;
   } catch (e) {
     leaderboardBodyEl.innerHTML = `<tr><td colspan="6">讀取失敗</td></tr>`;
     leaderboardStatusEl.textContent = `排行榜載入失敗：${e.message}`;
