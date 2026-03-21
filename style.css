@@ -1,13 +1,11 @@
 html, body {
-  margin: 0;
-  padding: 0;
+  margin: 0; padding: 0;
   font-family: Arial, "Noto Sans", "Noto Sans JP", sans-serif;
   background: linear-gradient(180deg, #f3f7fb 0%, #edf2f7 100%);
-  min-height: 100%;
-  color: #1e2936;
+  min-height: 100%; color: #1e2936;
 }
 body { padding: 16px; box-sizing: border-box; }
-#gameContainer { position: relative; width: min(100%, 940px); margin: 0 auto; text-align: center; }
+#gameContainer { position: relative; width: min(100%, 960px); margin: 0 auto; text-align: center; }
 canvas {
   border: 1px solid #ced8e3; background: #fafcff; display: block; margin: 0 auto;
   width: 100%; height: auto; box-sizing: border-box; border-radius: 14px;
@@ -19,52 +17,61 @@ canvas {
 }
 .overlay {
   position: absolute; inset: 0 auto auto 0; width: 100%; min-height: 500px;
-  background: rgba(244, 248, 252, 0.9); display: flex; flex-direction: column;
+  background: rgba(244, 248, 252, 0.92); display: flex; flex-direction: column;
   align-items: center; justify-content: center; z-index: 10; box-sizing: border-box;
   padding: 20px; border-radius: 14px;
 }
 .panel {
-  width: min(100%, 660px); background: rgba(255,255,255,0.95); border: 1px solid #d9e2eb;
+  width: min(100%, 700px); background: rgba(255,255,255,0.97); border: 1px solid #d9e2eb;
   border-radius: 18px; padding: 22px 20px; box-shadow: 0 10px 24px rgba(18, 31, 45, 0.08);
 }
-h1 { margin: 0 0 12px; }
+h1, h2 { margin: 0 0 12px; }
 .subtitle { margin: 0 0 18px; line-height: 1.55; color: #58687a; }
+.nameBlock { text-align: left; margin-bottom: 16px; }
+.nameBlock label {
+  display: block; font-weight: 700; margin-bottom: 8px; color: #314255;
+}
+.nameBlock input {
+  width: 100%; box-sizing: border-box; border: 1px solid #cdd8e4; border-radius: 10px;
+  padding: 12px 14px; font-size: 16px; outline: none; background: #fbfdff;
+}
+.nameBlock input:focus {
+  border-color: #83bfff;
+  box-shadow: 0 0 0 3px rgba(131, 191, 255, 0.18);
+}
 .modeLabel { text-align: left; font-weight: 700; margin-bottom: 10px; color: #314255; }
 .modeButtons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+button, select {
+  padding: 11px 18px; font-size: 16px; border-radius: 10px;
+}
 button {
-  padding: 11px 18px; font-size: 17px; border: none; background: #0a7be0; color: #fff;
-  border-radius: 10px; cursor: pointer; margin-top: 10px; transition: transform .08s ease, background .15s ease;
+  border: none; background: #0a7be0; color: #fff; cursor: pointer; margin-top: 10px;
+  transition: transform .08s ease, background .15s ease, opacity .15s ease;
 }
 button:hover { background: #0868bc; }
 button:active { transform: translateY(1px); }
+button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+select {
+  border: 1px solid #cbd8e6; background: #fff; color: #23313f;
+}
 .mode-btn { background: #eef5fb; color: #23405a; border: 1px solid #cbd8e6; margin-top: 0; }
 .mode-btn.active { background: #d8ecff; border-color: #83bfff; color: #0c4f9a; font-weight: 700; }
 .menuActions { margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .finalScore { font-size: 19px; line-height: 1.8; }
 .finalScore .bigKana { font-size: 38px; font-weight: 700; color: #0d5db2; }
+.gameOverHint { margin-top: 8px; color: #7a8695; font-size: 14px; }
 
-#keyboardWrap {
+#keyboardWrap, #leaderboardWrap {
   background: rgba(255,255,255,0.95); border: 1px solid #d9e0e6; border-radius: 14px;
   padding: 12px; box-sizing: border-box; margin-top: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.04);
 }
 #keyboardTitle { font-size: 14px; color: #55606d; margin-bottom: 10px; text-align: left; }
 #keyboard { display: flex; flex-direction: column; gap: 8px; }
-
 .kb-row { display: flex; gap: 8px; justify-content: center; }
 .keyboard-key {
-  min-height: 44px;
-  flex: 1 1 0;
-  min-width: 0;
-  border: 1px solid #cad3dc;
-  background: #f8fbfd;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #23313f;
-  cursor: pointer;
-  user-select: none;
-  touch-action: manipulation;
-  margin: 0;
+  min-height: 44px; flex: 1 1 0; min-width: 0; border: 1px solid #cad3dc; background: #f8fbfd;
+  border-radius: 10px; font-size: 16px; font-weight: 700; color: #23313f; cursor: pointer;
+  user-select: none; touch-action: manipulation; margin: 0;
 }
 .kb-row-10 .keyboard-key { max-width: calc((100% - 72px) / 10); }
 .kb-row-9 .keyboard-key { max-width: calc((100% - 64px) / 9); }
@@ -72,6 +79,32 @@ button:active { transform: translateY(1px); }
 .kb-row-actions .keyboard-key { flex: 1 1 0; max-width: none; }
 .keyboard-key.special { background: #edf4fa; }
 .keyboard-key.wide-15 { flex: 1.5 1 0; }
+
+.leaderboardHeader {
+  display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.leaderboardFilters {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+}
+#leaderboardStatus {
+  text-align: left; font-size: 14px; color: #617082; margin: 6px 0 10px;
+}
+.leaderboardTableWrap {
+  overflow-x: auto;
+}
+#leaderboardTable {
+  width: 100%; border-collapse: collapse; background: white;
+}
+#leaderboardTable th, #leaderboardTable td {
+  border-top: 1px solid #e4ebf2; padding: 10px 8px; font-size: 14px; text-align: center;
+}
+#leaderboardTable th {
+  background: #f7fbff; color: #38506b;
+}
+#leaderboardTable tbody tr:nth-child(even) {
+  background: #fbfdff;
+}
 
 @media (max-width: 900px) { .overlay { min-height: 0; height: 500px; } }
 @media (max-width: 700px) {
@@ -81,4 +114,5 @@ button:active { transform: translateY(1px); }
   .keyboard-key { min-height: 42px; font-size: 14px; padding: 0; }
   .panel { padding: 18px 14px; }
   .kb-row.centered { padding-left: 4.5%; padding-right: 4.5%; }
+  .leaderboardHeader { align-items: flex-start; }
 }

@@ -3,15 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>日語假名打字遊戲 v2</title>
+  <title>日語假名打字遊戲 v2.2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="gameContainer">
     <div id="menu" class="overlay">
       <div class="panel">
-        <h1>日語假名打字遊戲 v2</h1>
-        <p class="subtitle">輸入羅馬字讀音，消滅落下的假名。支援平假名、片假名、混合模式，以及手機 / 平板虛擬鍵盤。</p>
+        <h1>日語假名打字遊戲 v2.2</h1>
+        <p class="subtitle">輸入羅馬字讀音，消滅落下的假名。支援平假名、片假名、混合模式、虛擬鍵盤，以及 Cloudflare 雲端排行榜。</p>
+        <div class="nameBlock">
+          <label for="playerName">玩家名稱</label>
+          <input id="playerName" type="text" maxlength="20" placeholder="請輸入名稱" />
+        </div>
         <div class="modeLabel">選擇模式</div>
         <div class="modeButtons">
           <button class="mode-btn" data-mode="hiragana">平假名</button>
@@ -20,6 +24,7 @@
         </div>
         <div class="menuActions">
           <button id="startButton">開始遊戲</button>
+          <button id="refreshLeaderboardButton">刷新排行榜</button>
         </div>
       </div>
     </div>
@@ -27,11 +32,13 @@
     <canvas id="gameCanvas" width="800" height="500"></canvas>
 
     <div id="ui">
+      <div>玩家：<span id="playerNameText">-</span></div>
       <div>模式：<span id="modeText">平假名</span></div>
       <div>分數：<span id="score">0</span></div>
       <div>難度：<span id="level">1</span></div>
       <div>輸入：<span id="typed">&nbsp;</span></div>
       <div>弱點字：<span id="weakCount">0</span></div>
+      <div>輸入方式：<span id="inputTypeText">未判定</span></div>
     </div>
 
     <div id="keyboardWrap">
@@ -44,13 +51,52 @@
       </div>
     </div>
 
+    <div id="leaderboardWrap">
+      <div class="leaderboardHeader">
+        <h2>雲端排行榜</h2>
+        <div class="leaderboardFilters">
+          <select id="leaderboardMode">
+            <option value="hiragana">平假名</option>
+            <option value="katakana">片假名</option>
+            <option value="mixed">混合模式</option>
+          </select>
+          <select id="leaderboardInputType">
+            <option value="virtual">virtual</option>
+            <option value="physical">physical</option>
+          </select>
+          <button id="loadLeaderboardButton">載入排行榜</button>
+        </div>
+      </div>
+      <div id="leaderboardStatus">尚未載入排行榜。</div>
+      <div class="leaderboardTableWrap">
+        <table id="leaderboardTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>玩家</th>
+              <th>分數</th>
+              <th>難度</th>
+              <th>輸入方式</th>
+              <th>時間</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <tr><td colspan="6">暫無資料</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div id="gameOver" class="overlay" style="display:none">
       <div class="panel">
         <h1>遊戲結束</h1>
         <div id="finalScore" class="finalScore"></div>
+        <div id="gameOverHint" class="gameOverHint">請先查看成績與致死假名…</div>
         <div class="menuActions">
+          <button id="submitScoreButton">提交分數</button>
           <button id="restartButton">重新開始</button>
           <button id="spicyButton">加辣🔥</button>
+          <button id="backToMenuButton">返回主畫面</button>
         </div>
       </div>
     </div>

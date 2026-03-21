@@ -1,3 +1,5 @@
+const API_BASE = "https://kana-game-api.jgon-li-816.workers.dev";
+
 const hiraganaMap = [
   { kana: 'あ', romaji: 'a' }, { kana: 'い', romaji: 'i' }, { kana: 'う', romaji: 'u' }, { kana: 'え', romaji: 'e' }, { kana: 'お', romaji: 'o' },
   { kana: 'か', romaji: 'ka' }, { kana: 'き', romaji: 'ki' }, { kana: 'く', romaji: 'ku' }, { kana: 'け', romaji: 'ke' }, { kana: 'こ', romaji: 'ko' },
@@ -23,20 +25,12 @@ const katakanaMap = [
   { kana: 'ワ', romaji: 'wa' }, { kana: 'ヲ', romaji: 'wo' }, { kana: 'ン', romaji: 'n' }
 ];
 
-let canvas, ctx;
-let falling = [];
-let spawnInterval = 1800;
-let lastSpawn = 0;
-let lastTime = 0;
-let score = 0;
-let level = 1;
-let speedMultiplier = 1;
-let typedBuffer = '';
-let running = false;
-let lastFailedKana = null;
-let lastFailedLevel = 1;
+let canvas, ctx, falling = [];
+let spawnInterval = 1800, lastSpawn = 0, lastTime = 0, score = 0, level = 1, speedMultiplier = 1;
+let typedBuffer = '', running = false, lastFailedKana = null, lastFailedLevel = 1;
 let currentMode = localStorage.getItem('kanaGameMode') || 'hiragana';
 let weakMap = loadWeakMap();
+let inputType = 'unknown', currentPlayerName = '', gameOverLock = false;
 const defenseHeight = 40;
 
 const scoreEl = document.getElementById('score');
@@ -44,35 +38,61 @@ const levelEl = document.getElementById('level');
 const typedEl = document.getElementById('typed');
 const weakCountEl = document.getElementById('weakCount');
 const modeTextEl = document.getElementById('modeText');
+const inputTypeTextEl = document.getElementById('inputTypeText');
+const playerNameTextEl = document.getElementById('playerNameText');
+const playerNameInput = document.getElementById('playerName');
 const menu = document.getElementById('menu');
 const gameOverEl = document.getElementById('gameOver');
 const finalScoreEl = document.getElementById('finalScore');
+const gameOverHintEl = document.getElementById('gameOverHint');
 const startButton = document.getElementById('startButton');
 const restartButton = document.getElementById('restartButton');
 const spicyButton = document.getElementById('spicyButton');
+const submitScoreButton = document.getElementById('submitScoreButton');
+const backToMenuButton = document.getElementById('backToMenuButton');
+const refreshLeaderboardButton = document.getElementById('refreshLeaderboardButton');
+const loadLeaderboardButton = document.getElementById('loadLeaderboardButton');
+const leaderboardModeEl = document.getElementById('leaderboardMode');
+const leaderboardInputTypeEl = document.getElementById('leaderboardInputType');
+const leaderboardStatusEl = document.getElementById('leaderboardStatus');
+const leaderboardBodyEl = document.getElementById('leaderboardBody');
 const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
 
 function init() {
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
+  const savedPlayerName = localStorage.getItem('kanaGamePlayerName') || '';
+  playerNameInput.value = savedPlayerName;
+  playerNameTextEl.textContent = savedPlayerName || '-';
+
+  leaderboardModeEl.value = currentMode;
+
   startButton.addEventListener('click', () => startGame(1));
-  restartButton.addEventListener('click', () => startGame(1));
-  spicyButton.addEventListener('click', spicyRestart);
+  restartButton.addEventListener('click', () => { if (!gameOverLock) startGame(1); });
+  spicyButton.addEventListener('click', () => { if (!gameOverLock) spicyRestart(); });
+  submitScoreButton.addEventListener('click', () => { if (!gameOverLock) submitScore(); });
+  backToMenuButton.addEventListener('click', () => { if (!gameOverLock) backToMenu(); });
+  refreshLeaderboardButton.addEventListener('click', () => loadLeaderboard());
+  loadLeaderboardButton.addEventListener('click', () => loadLeaderboard());
+
   document.addEventListener('keydown', handlePhysicalKey);
-  modeButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentMode = btn.dataset.mode;
-      localStorage.setItem('kanaGameMode', currentMode);
-      updateModeUI();
-    });
-  });
+  modeButtons.forEach(btn => btn.addEventListener('click', () => {
+    currentMode = btn.dataset.mode;
+    localStorage.setItem('kanaGameMode', currentMode);
+    leaderboardModeEl.value = currentMode;
+    updateModeUI();
+  }));
+
   createVirtualKeyboard();
   updateModeUI();
   updateTypedDisplay();
   updateWeakCount();
+  updateInputTypeUI();
   preloadVoices();
   drawIdleScreen();
+  loadLeaderboard();
 }
+
 function preloadVoices() {
   window.speechSynthesis.getVoices();
   window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
@@ -95,6 +115,9 @@ function updateModeUI() {
   modeTextEl.textContent = modeText;
   modeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === currentMode));
 }
+function updateInputTypeUI() {
+  inputTypeTextEl.textContent = inputType === 'unknown' ? '未判定' : inputType;
+}
 function getKanaMap() {
   if (currentMode === 'katakana') return katakanaMap;
   if (currentMode === 'mixed') return [...hiraganaMap, ...katakanaMap];
@@ -106,7 +129,7 @@ function appendKey(parentId, label, value, className = '') {
   btn.type = 'button';
   btn.className = `keyboard-key ${className}`.trim();
   btn.textContent = label;
-  btn.addEventListener('click', () => handleVirtualInput(value));
+  btn.addEventListener('click', () => handleVirtualInput(value, true));
   parent.appendChild(btn);
 }
 function createVirtualKeyboard() {
@@ -115,18 +138,21 @@ function createVirtualKeyboard() {
   appendKey('row3', '⌫', 'backspace', 'special wide-15');
   ['z','x','c','v','b','n','m'].forEach(k => appendKey('row3', k, k));
   appendKey('row3', '清除', 'clear', 'special wide-15');
+  appendKey('row4', '提交分數', 'submit', 'special');
   appendKey('row4', '重開', 'restart', 'special');
   appendKey('row4', '選模式', 'menu', 'special');
 }
-function handleVirtualInput(value) {
-  if (value === 'restart') { startGame(1); return; }
-  if (value === 'menu') {
-    running = false;
-    gameOverEl.style.display = 'none';
-    menu.style.display = 'flex';
-    drawIdleScreen();
-    return;
+function markInputType(type) {
+  if (inputType === 'unknown') {
+    inputType = type;
+    updateInputTypeUI();
   }
+}
+function handleVirtualInput(value, fromVirtual = false) {
+  if (fromVirtual && /^[a-z]$/.test(value)) markInputType('virtual');
+  if (value === 'submit') { if (!running && !gameOverLock) submitScore(); return; }
+  if (value === 'restart') { if (!gameOverLock) startGame(1); return; }
+  if (value === 'menu') { if (!gameOverLock) backToMenu(); return; }
   if (value === 'clear') { typedBuffer = ''; updateTypedDisplay(); return; }
   if (!running) return;
   if (value === 'backspace') { typedBuffer = typedBuffer.slice(0, -1); updateTypedDisplay(); return; }
@@ -134,12 +160,21 @@ function handleVirtualInput(value) {
 }
 function handlePhysicalKey(e) {
   const key = e.key.toLowerCase();
+  if (!running) return;
   if (key === 'backspace') { e.preventDefault(); handleVirtualInput('backspace'); return; }
-  if (/^[a-z]$/.test(key)) handleVirtualInput(key);
+  if (/^[a-z]$/.test(key)) { markInputType('physical'); handleVirtualInput(key); }
 }
 function levelToSpawnInterval(targetLevel) { return Math.max(650, 1800 - (targetLevel - 1) * 140); }
 function levelToSpeedMultiplier(targetLevel) { return 1 + (targetLevel - 1) * 0.12; }
 function startGame(startLevel = 1) {
+  currentPlayerName = (playerNameInput.value.trim() || 'Player').slice(0, 20);
+  localStorage.setItem('kanaGamePlayerName', currentPlayerName);
+  playerNameInput.value = currentPlayerName;
+  playerNameTextEl.textContent = currentPlayerName;
+  inputType = 'unknown';
+  updateInputTypeUI();
+  gameOverLock = false;
+  unlockGameOverButtons();
   falling = [];
   score = 0;
   level = Math.max(1, startLevel);
@@ -159,12 +194,74 @@ function startGame(startLevel = 1) {
   requestAnimationFrame(gameLoop);
 }
 function spicyRestart() { startGame(Math.max(1, lastFailedLevel - 1)); }
+function backToMenu() {
+  running = false;
+  gameOverEl.style.display = 'none';
+  menu.style.display = 'flex';
+  drawIdleScreen();
+}
+async function submitScore() {
+  const entry = {
+    name: currentPlayerName || 'Player',
+    score, mode: currentMode, level: lastFailedLevel,
+    inputType, failedKana: lastFailedKana ? lastFailedKana.kana : '',
+    failedRomaji: lastFailedKana ? lastFailedKana.romaji : ''
+  };
+  try {
+    submitScoreButton.disabled = true;
+    const res = await fetch(`${API_BASE}/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry)
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || "提交失敗");
+    alert(`已提交分數\n玩家：${entry.name}\n分數：${entry.score}\n輸入方式：${entry.inputType}`);
+    await loadLeaderboard(currentMode, inputType === 'unknown' ? 'virtual' : inputType);
+  } catch (e) {
+    alert(`提交失敗：${e.message}`);
+  } finally {
+    submitScoreButton.disabled = false;
+  }
+}
+async function loadLeaderboard(mode = leaderboardModeEl.value, inputType = leaderboardInputTypeEl.value) {
+  leaderboardStatusEl.textContent = "載入排行榜中…";
+  leaderboardBodyEl.innerHTML = `<tr><td colspan="6">載入中…</td></tr>`;
+  try {
+    const res = await fetch(`${API_BASE}/leaderboard?mode=${encodeURIComponent(mode)}&inputType=${encodeURIComponent(inputType)}&limit=10`);
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error("排行榜格式錯誤");
+
+    leaderboardModeEl.value = mode;
+    leaderboardInputTypeEl.value = inputType;
+
+    if (data.length === 0) {
+      leaderboardBodyEl.innerHTML = `<tr><td colspan="6">暫無資料</td></tr>`;
+      leaderboardStatusEl.textContent = `排行榜已載入：${mode} / ${inputType}（暫無資料）`;
+      return;
+    }
+
+    leaderboardBodyEl.innerHTML = data.map((row, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${escapeHtml(row.name || "-")}</td>
+        <td>${row.score ?? "-"}</td>
+        <td>${row.level ?? "-"}</td>
+        <td>${escapeHtml(row.input_type || "-")}</td>
+        <td>${formatTime(row.created_at)}</td>
+      </tr>
+    `).join("");
+
+    leaderboardStatusEl.textContent = `排行榜已載入：${mode} / ${inputType}`;
+  } catch (e) {
+    leaderboardBodyEl.innerHTML = `<tr><td colspan="6">讀取失敗</td></tr>`;
+    leaderboardStatusEl.textContent = `排行榜載入失敗：${e.message}`;
+  }
+}
 function getWeightedKana(map) {
   const pool = [];
   for (const item of map) {
-    let weight = 1;
-    const weakCount = weakMap[item.kana] || 0;
-    weight += Math.min(weakCount * 2, 8);
+    let weight = 1 + Math.min((weakMap[item.kana] || 0) * 2, 8);
     for (let i = 0; i < weight; i++) pool.push(item);
   }
   return pool[Math.floor(Math.random() * pool.length)];
@@ -241,15 +338,14 @@ function drawIdleScreen() {
   ctx.font = '24px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('先選模式，再按「開始遊戲」', canvas.width / 2, canvas.height / 2 - 20);
+  ctx.fillText('先輸入名稱、選模式，再按「開始遊戲」', canvas.width / 2, canvas.height / 2 - 20);
   ctx.font = '18px sans-serif';
-  ctx.fillText('可用實體鍵盤或下方虛擬鍵盤輸入', canvas.width / 2, canvas.height / 2 + 20);
+  ctx.fillText('輸入方式會自動判定為 physical 或 virtual', canvas.width / 2, canvas.height / 2 + 20);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 }
 function checkTypedBuffer() {
-  let foundExact = null;
-  let foundPrefix = false;
+  let foundExact = null, foundPrefix = false;
   for (const obj of falling) {
     if (obj.romaji.startsWith(typedBuffer)) {
       foundPrefix = true;
@@ -278,14 +374,28 @@ function checkTypedBuffer() {
   }
 }
 function updateTypedDisplay() { typedEl.textContent = typedBuffer || '\u00a0'; }
+function lockGameOverButtons() {
+  restartButton.disabled = true; spicyButton.disabled = true; submitScoreButton.disabled = true; backToMenuButton.disabled = true;
+}
+function unlockGameOverButtons() {
+  restartButton.disabled = false; spicyButton.disabled = false; submitScoreButton.disabled = false; backToMenuButton.disabled = false;
+}
 function showGameOver() {
   if (lastFailedKana) {
-    finalScoreEl.innerHTML = `您的分數：${score}<br>死亡難度：${lastFailedLevel}<br><br>❌ 擊中你的假名是：<br><span class="bigKana">${lastFailedKana.kana}</span><br>羅馬字拼音：<b>${lastFailedKana.romaji}</b><br>已記錄為弱點字，之後會較常出現。`;
+    finalScoreEl.innerHTML = `玩家：${currentPlayerName || 'Player'}<br>分數：${score}<br>死亡難度：${lastFailedLevel}<br>輸入方式：${inputType}<br><br>❌ 擊中你的假名是：<br><span class="bigKana">${lastFailedKana.kana}</span><br>羅馬字拼音：<b>${lastFailedKana.romaji}</b><br>已記錄為弱點字，之後會較常出現。`;
     speakKana(lastFailedKana.kana);
   } else {
     finalScoreEl.textContent = `您的分數：${score}`;
   }
+  gameOverLock = true;
+  gameOverHintEl.textContent = '請先查看成績與致死假名…';
+  lockGameOverButtons();
   gameOverEl.style.display = 'flex';
+  setTimeout(() => {
+    unlockGameOverButtons();
+    gameOverLock = false;
+    gameOverHintEl.textContent = '現在可提交分數、重新開始、加辣或返回主畫面。';
+  }, 1500);
 }
 function speakKana(kana) {
   try {
@@ -293,9 +403,7 @@ function speakKana(kana) {
     const synth = window.speechSynthesis;
     synth.cancel();
     const utter = new SpeechSynthesisUtterance(kana);
-    utter.lang = 'ja-JP';
-    utter.rate = 0.95;
-    utter.pitch = 1.0;
+    utter.lang = 'ja-JP'; utter.rate = 0.95; utter.pitch = 1.0;
     const voices = synth.getVoices();
     const jaVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja'));
     if (jaVoice) utter.voice = jaVoice;
@@ -303,5 +411,13 @@ function speakKana(kana) {
   } catch (e) {
     console.log('speech error', e);
   }
+}
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+function formatTime(ts) {
+  if (!ts) return "-";
+  const d = new Date(ts);
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 window.addEventListener('load', init);
